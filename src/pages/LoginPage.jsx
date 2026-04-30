@@ -79,6 +79,18 @@ const LoginPage = () => {
             Register
           </Link>
         </div>
+
+        {/* TEMP: Show all relevant environment variables for testing */}
+        <div className="env-debug" style={{ marginBottom: 16, background: '#f8f8f8', padding: 8, borderRadius: 4 }}>
+          <div><b>VITE_API_URL:</b> {import.meta.env.VITE_API_URL || 'not set'}</div>
+          <div><b>FRONTEND_URL:</b> {import.meta.env.FRONTEND_URL || 'not set'}</div>
+          <div><b>NODE_ENV:</b> {import.meta.env.MODE}</div>
+          <div><b>DATABASE_URL:</b> {import.meta.env.DATABASE_URL ? 'set' : 'not set'}</div>
+          <div><b>DIRECT_URL:</b> {import.meta.env.DIRECT_URL ? 'set' : 'not set'}</div>
+          <div><b>JWT_SECRET:</b> {import.meta.env.JWT_SECRET ? 'set' : 'not set'}</div>
+          <div><b>RESEND_API_KEY:</b> {import.meta.env.RESEND_API_KEY ? 'set' : 'not set'}</div>
+          <div><b>RESEND_FROM:</b> {import.meta.env.RESEND_FROM ? 'set' : 'not set'}</div>
+        </div>
       </div>
     </section>
   )
