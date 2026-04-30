@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id                 String               @id @default(uuid())
+  email              String               @unique
+  password           String
+  name               String?
+  isVerified         Boolean              @default(false)
+  createdAt          DateTime             @default(now())
+  verificationTokens VerificationToken[]
+  invitesSent        Invite[]             @relation("InvitesSent")
+  memberships        GroupMember[]
+  groupsCreated      Group[]              @relation("GroupsCreated")
+  expensesPaid       Expense[]            @relation("ExpensesPaid")
+  expenseSplits      ExpenseSplit[]
+}
+
+model VerificationToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Group {
+  id              String        @id @default(uuid())
+  name            String
+  inviteCode      String        @unique
+  createdByUserId String
+  createdByUser   User          @relation("GroupsCreated", fields: [createdByUserId], references: [id])
+  createdAt       DateTime      @default(now())
+  members         GroupMember[]
+  expenses        Expense[]
+  invites         Invite[]
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+
+  @@map("invite_status")
+}
+
+model Invite {
+  id             String       @id @default(uuid())
+  groupId        String
+  email          String
+  token          String       @unique
+  status         InviteStatus @default(PENDING)
+  invitedByUserId String
+  invitedByUser  User         @relation("InvitesSent", fields: [invitedByUserId], references: [id])
+  group          Group        @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  expiresAt      DateTime
+  createdAt      DateTime     @default(now())
+  acceptedAt     DateTime?
+
+  @@index([email])
+  @@index([groupId])
+  @@unique([groupId, email])
+}
+
+model GroupMember {
+  id        String   @id @default(uuid())
+  groupId   String
+  userId    String
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([groupId, userId])
+}
+
+model Expense {
+  id            String        @id @default(uuid())
+  groupId       String
+  paidByUserId  String
+  amount        Decimal       @db.Decimal(12, 2)
+  description   String
+  createdAt     DateTime      @default(now())
+  group         Group         @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  paidByUser    User          @relation("ExpensesPaid", fields: [paidByUserId], references: [id])
+  splits        ExpenseSplit[]
+}
+
+model ExpenseSplit {
+  id          String   @id @default(uuid())
+  expenseId   String
+  userId      String
+  shareAmount Decimal  @db.Decimal(12, 2)
+  expense     Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

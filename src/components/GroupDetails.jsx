@@ -1,0 +1,150 @@
+import { useState } from 'react'
+import BalanceSummary from './BalanceSummary'
+import ExpenseList from './ExpenseList'
+import AddExpenseForm from './AddExpenseForm'
+import ContributionPieChart from './ContributionPieChart'
+import {
+  buildContributionData,
+  buildDebtPairs,
+  calculateBalances,
+  formatCurrency,
+} from '../utils/finance'
+
+const GroupDetails = ({
+  group,
+  expenses,
+  invites = [],
+  currentUser,
+  onAddExpense,
+  onInvite,
+}) => {
+  const [copied, setCopied] = useState(false)
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteStatus, setInviteStatus] = useState('idle')
+  const { netBalances } = calculateBalances(group.members, expenses)
+  const contributions = buildContributionData(group.members, expenses)
+  const debts = buildDebtPairs(group.members, netBalances)
+
+  const inviteLink = `${window.location.origin}/join/${group.inviteCode}`
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(inviteLink)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1600)
+    } catch (error) {
+      setCopied(false)
+    }
+  }
+
+  const handleInvite = async (event) => {
+    event.preventDefault()
+    if (!inviteEmail.trim() || !onInvite) return
+    setInviteStatus('loading')
+    try {
+      await onInvite(inviteEmail.trim())
+      setInviteEmail('')
+      setInviteStatus('sent')
+      window.setTimeout(() => setInviteStatus('idle'), 2000)
+    } catch (error) {
+      setInviteStatus('error')
+    }
+  }
+
+  return (
+    <section className="group-details">
+      <header className="card group-hero">
+        <div>
+          <h2>{group.name}</h2>
+          <div className="invite-row">
+            <label className="muted">Invite link</label>
+            <div className="invite-actions">
+              <input type="text" value={inviteLink} readOnly />
+              <button type="button" className="ghost" onClick={handleCopy}>
+                {copied ? 'Nakopya!' : 'Copy link'}
+              </button>
+            </div>
+            <span className="muted">Code: {group.inviteCode}</span>
+          </div>
+          <form className="stack" onSubmit={handleInvite}>
+            <label>
+              Invite by email
+              <input
+                type="email"
+                placeholder="kaibigan@ambagan.ph"
+                value={inviteEmail}
+                onChange={(event) => setInviteEmail(event.target.value)}
+                required
+              />
+            </label>
+            <button type="submit" className="ghost" disabled={inviteStatus === 'loading'}>
+              {inviteStatus === 'loading' ? 'Sending...' : 'Send invite'}
+            </button>
+            {inviteStatus === 'sent' ? (
+              <span className="muted">Invite sent!</span>
+            ) : null}
+            {inviteStatus === 'error' ? (
+              <span className="muted">Failed to send invite.</span>
+            ) : null}
+          </form>
+          {invites.length > 0 ? (
+            <div className="pending-invites">
+              <p className="muted">Pending invites</p>
+              {invites.map((invite) => (
+                <div key={invite.id} className="invite-row">
+                  <span>{invite.email}</span>
+                  <span className="muted">Pending</span>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+        <div className="member-chips">
+          {group.members.map((member) => (
+            <span key={member.id} className="chip">
+              {member.name}
+            </span>
+          ))}
+        </div>
+      </header>
+
+      <div className="grid-two">
+        <BalanceSummary currentUser={currentUser} balances={netBalances} />
+        <ContributionPieChart data={contributions} />
+      </div>
+
+      <section className="card">
+        <div className="section-head">
+          <h3>Sino ang may utang?</h3>
+          <span className="muted">Auto compute</span>
+        </div>
+        {debts.length === 0 ? (
+          <p className="muted">Pantay-pantay na ang ambagan.</p>
+        ) : (
+          <div className="debts">
+            {debts.map((debt, index) => (
+              <div key={`${debt.from}-${debt.to}-${index}`} className="debt">
+                <span>{debt.from}</span>
+                <span className="muted">may utang kay</span>
+                <span>{debt.to}</span>
+                <strong>{formatCurrency(debt.amount)}</strong>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <div className="grid-two">
+        <AddExpenseForm
+          members={group.members}
+          currentUser={currentUser}
+          onAddExpense={onAddExpense}
+          disabled={!group}
+        />
+        <ExpenseList expenses={expenses} members={group.members} />
+      </div>
+    </section>
+  )
+}
+
+export default GroupDetails

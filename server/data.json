@@ -1,0 +1,209 @@
+{
+  "groups": [
+    {
+      "id": "g1776352369882",
+      "name": "Pagudpud",
+      "inviteCode": "AMB-520",
+      "members": [
+        {
+          "id": "u1776352369882",
+          "name": "vea",
+          "email": "vea@test.com"
+        },
+        {
+          "id": "u1776352410919",
+          "name": "neva",
+          "email": "neva@test.com"
+        },
+        {
+          "id": "u1776352465129",
+          "name": "via",
+          "email": "via@test.com"
+        }
+      ]
+    },
+    {
+      "id": "g1776352068511",
+      "name": "Swimming Pool",
+      "inviteCode": "AMB-329",
+      "members": [
+        {
+          "id": "u1776352068511",
+          "name": "VEA",
+          "email": "VEA@gmail"
+        },
+        {
+          "id": "u1776352089968",
+          "name": "NEVA",
+          "email": "NEVA@tes.com"
+        },
+        {
+          "id": "u1776352107343",
+          "name": "VIA",
+          "email": "VIA@test.com"
+        },
+        {
+          "id": "u1776352184449",
+          "name": "Vea",
+          "email": "Vea@test.com"
+        },
+        {
+          "id": "u1776352251331",
+          "name": "VEA",
+          "email": "VEA@gmail.com"
+        }
+      ]
+    },
+    {
+      "id": "g1776351776832",
+      "name": "TEST ulet",
+      "inviteCode": "AMB-900",
+      "members": [
+        {
+          "id": "u1776351776832",
+          "name": "lgutz2020",
+          "email": "lgutz2020@gmail.com"
+        }
+      ]
+    },
+    {
+      "id": "g1776351426590",
+      "name": "TEST",
+      "inviteCode": "AMB-757",
+      "members": [
+        {
+          "id": "u1776351426590",
+          "name": "lgutz2020",
+          "email": "lgutz2020@gmail.com"
+        },
+        {
+          "id": "u1776351813928",
+          "name": "TEST",
+          "email": "TEST@tes.com"
+        }
+      ]
+    },
+    {
+      "id": "g1",
+      "name": "Barkada 2026",
+      "inviteCode": "BARKADA-2026",
+      "members": [
+        {
+          "id": "u1",
+          "name": "Louie",
+          "email": "louie@ambagan.ph"
+        },
+        {
+          "id": "u2",
+          "name": "Mark",
+          "email": "mark@ambagan.ph"
+        },
+        {
+          "id": "u3",
+          "name": "Ana",
+          "email": "ana@ambagan.ph"
+        },
+        {
+          "id": "u4",
+          "name": "Jenna",
+          "email": "jenna@ambagan.ph"
+        }
+      ]
+    }
+  ],
+  "expenses": {
+    "g1": [
+      {
+        "id": "e1",
+        "amount": 1500,
+        "paidBy": "u1",
+        "description": "Lechon + inihaw",
+        "createdAt": "2026-04-10"
+      },
+      {
+        "id": "e2",
+        "amount": 800,
+        "paidBy": "u2",
+        "description": "Coffee run",
+        "createdAt": "2026-04-12"
+      },
+      {
+        "id": "e3",
+        "amount": 1200,
+        "paidBy": "u3",
+        "description": "Beach cottage share",
+        "createdAt": "2026-04-13"
+      }
+    ],
+    "g1776351426590": [
+      {
+        "id": "e1776351914091",
+        "amount": 1450,
+        "paidBy": "u1776351813928",
+        "description": "Walang label",
+        "createdAt": "2026-04-16"
+      },
+      {
+        "id": "e1776351825968",
+        "amount": 1500,
+        "paidBy": "u1776351426590",
+        "description": "Snack",
+        "createdAt": "2026-04-16"
+      },
+      {
+        "id": "e1776351462384",
+        "amount": 2500,
+        "paidBy": "u1776351426590",
+        "description": "MErienda",
+        "createdAt": "2026-04-16"
+      }
+    ],
+    "g1776351776832": [],
+    "g1776352068511": [
+      {
+        "id": "e1776352160824",
+        "amount": 8000,
+        "paidBy": "u1776352068511",
+        "description": "Transpo and Foods",
+        "createdAt": "2026-04-16"
+      },
+      {
+        "id": "e1776352137856",
+        "amount": 4500,
+        "paidBy": "u1776352089968",
+        "description": "Accomodation",
+        "createdAt": "2026-04-16"
+      },
+      {
+        "id": "e1776352124695",
+        "amount": 2500,
+        "paidBy": "u1776352107343",
+        "description": "Entrance Fees",
+        "createdAt": "2026-04-16"
+      }
+    ],
+    "g1776352369882": [
+      {
+        "id": "e1776352505554",
+        "amount": 3000,
+        "paidBy": "u1776352465129",
+        "description": "Transpo",
+        "createdAt": "2026-04-16"
+      },
+      {
+        "id": "e1776352423431",
+        "amount": 5500,
+        "paidBy": "u1776352410919",
+        "description": "Accomodation",
+        "createdAt": "2026-04-16"
+      },
+      {
+        "id": "e1776352389622",
+        "amount": 4000,
+        "paidBy": "u1776352369882",
+        "description": "Foods all day",
+        "createdAt": "2026-04-16"
+      }
+    ]
+  }
+}

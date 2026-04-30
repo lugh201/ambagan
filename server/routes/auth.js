@@ -1,0 +1,130 @@
+import express from 'express'
+import crypto from 'crypto'
+import bcrypt from 'bcryptjs'
+import prisma from '../lib/prisma.js'
+import { sendVerificationEmail } from '../lib/email.js'
+import { signToken } from '../lib/auth.js'
+
+const router = express.Router()
+
+const normalizeEmail = (email) => email?.trim().toLowerCase()
+const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+
+router.post('/register', async (req, res) => {
+  const email = normalizeEmail(req.body.email)
+  const name = req.body.name?.trim() || null
+  const password = req.body.password
+
+  if (!email || !isValidEmail(email)) {
+    return res.status(400).json({ message: 'Invalid email' })
+  }
+
+  if (!password || password.length < 8) {
+    return res.status(400).json({ message: 'Password must be at least 8 characters' })
+  }
+
+  let user = await prisma.user.findUnique({ where: { email } })
+  if (!user) {
+    const passwordHash = await bcrypt.hash(password, 10)
+    user = await prisma.user.create({
+      data: {
+        email,
+        name,
+        isVerified: false,
+        password: passwordHash,
+      },
+    })
+  }
+
+  if (user.isVerified) {
+    return res.status(409).json({ message: 'Account already verified' })
+  }
+
+  await prisma.verificationToken.deleteMany({ where: { userId: user.id } })
+
+  const token = crypto.randomUUID()
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24)
+
+  await prisma.verificationToken.create({
+    data: {
+      token,
+      userId: user.id,
+      expiresAt,
+    },
+  })
+
+  await sendVerificationEmail({ to: email, token })
+
+  return res.json({ ok: true })
+})
+
+router.get('/verify', async (req, res) => {
+  const token = req.query.token
+
+  if (!token) {
+    return res.status(400).json({ message: 'Missing token' })
+  }
+
+  const record = await prisma.verificationToken.findUnique({
+    where: { token: String(token) },
+  })
+
+  if (!record) {
+    return res.status(404).json({ message: 'Token not found' })
+  }
+
+  if (record.expiresAt < new Date()) {
+    await prisma.verificationToken.delete({ where: { id: record.id } })
+    return res.status(410).json({ message: 'Token expired' })
+  }
+
+  await prisma.user.update({
+    where: { id: record.userId },
+    data: { isVerified: true },
+  })
+
+  await prisma.verificationToken.delete({ where: { id: record.id } })
+
+  return res.json({ ok: true })
+})
+
+router.post('/login', async (req, res) => {
+  const email = normalizeEmail(req.body.email)
+  const password = req.body.password
+
+  if (!email || !isValidEmail(email)) {
+    return res.status(400).json({ message: 'Invalid email' })
+  }
+
+  if (!password) {
+    return res.status(400).json({ message: 'Password is required' })
+  }
+
+  const user = await prisma.user.findUnique({ where: { email } })
+
+  if (!user) {
+    return res.status(401).json({ message: 'Account not found' })
+  }
+
+  if (!user.isVerified) {
+    return res.status(403).json({ message: 'Email not verified' })
+  }
+
+  const match = await bcrypt.compare(password, user.password)
+  if (!match) {
+    return res.status(401).json({ message: 'Invalid credentials' })
+  }
+
+  const token = signToken(user)
+
+  return res.json({
+    token,
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+    },
+  })
+})
+
+export default router
