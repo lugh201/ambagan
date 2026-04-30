@@ -1,8 +1,6 @@
 import express from 'express'
-import crypto from 'crypto'
 import bcrypt from 'bcryptjs'
 import prisma from '../lib/prisma.js'
-import { sendVerificationEmail } from '../lib/email.js'
 import { signToken } from '../lib/auth.js'
 
 const router = express.Router()
@@ -30,32 +28,13 @@ router.post('/register', async (req, res) => {
       data: {
         email,
         name,
-        isVerified: false,
+        isVerified: true,
         password: passwordHash,
       },
     })
   }
 
-  if (user.isVerified) {
-    return res.status(409).json({ message: 'Account already verified' })
-  }
-
-  await prisma.verificationToken.deleteMany({ where: { userId: user.id } })
-
-  const token = crypto.randomUUID()
-  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24)
-
-  await prisma.verificationToken.create({
-    data: {
-      token,
-      userId: user.id,
-      expiresAt,
-    },
-  })
-
-  await sendVerificationEmail({ to: email, token })
-
-  return res.json({ ok: true })
+  return res.json({ ok: true, message: 'Registered successfully' })
 })
 
 router.get('/verify', async (req, res) => {
@@ -104,10 +83,6 @@ router.post('/login', async (req, res) => {
 
   if (!user) {
     return res.status(401).json({ message: 'Account not found' })
-  }
-
-  if (!user.isVerified) {
-    return res.status(403).json({ message: 'Email not verified' })
   }
 
   const match = await bcrypt.compare(password, user.password)

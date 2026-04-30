@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { registerUser } from '../services/api'
 
 const RegisterPage = () => {
+  const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
   const [password, setPassword] = useState('')
@@ -16,7 +17,7 @@ const RegisterPage = () => {
 
     try {
       await registerUser({ email, name, password })
-      setStatus('sent')
+      navigate('/login')
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed')
       setStatus('idle')
@@ -27,7 +28,7 @@ const RegisterPage = () => {
     <section className="auth-page">
       <div className="card auth-card">
         <h2>Register</h2>
-        <p className="muted">Magpadala tayo ng verification link sa email mo.</p>
+        <p className="muted">Create your account to start using Ambagan.</p>
 
         {status === 'sent' ? (
           <div className="notice">
