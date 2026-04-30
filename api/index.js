@@ -19,5 +19,14 @@ app.use('/api/auth', authRoutes)
 app.use('/api/groups', groupRoutes)
 app.use('/api/invites', inviteRoutes)
 
+// TEMP: Environment variable test endpoint
+app.get('/api/env-test', (req, res) => {
+  res.json({
+    databaseUrl: process.env.DATABASE_URL ? 'set' : 'not set',
+    jwtSecret: process.env.JWT_SECRET ? 'set' : 'not set',
+    nodeEnv: process.env.NODE_ENV,
+  })
+})
+
 // Vercel serverless handler
 export default handle(app)
