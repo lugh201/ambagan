@@ -1,7 +1,8 @@
 import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
-import { handle } from '@vercel/express'
+import pkg from '@vercel/express';
+const { handle } = pkg;
 import authRoutes from '../server/routes/auth.js'
 import groupRoutes from '../server/routes/groups.js'
 import inviteRoutes from '../server/routes/invites.js'
