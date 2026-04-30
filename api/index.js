@@ -1,8 +1,7 @@
 import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
-import pkg from '@vercel/express';
-const { handle } = pkg;
+
 import authRoutes from '../server/routes/auth.js'
 import groupRoutes from '../server/routes/groups.js'
 import inviteRoutes from '../server/routes/invites.js'
@@ -30,4 +29,4 @@ app.get('/api/env-test', (req, res) => {
 })
 
 // Vercel serverless handler
-export default handle(app)
+export default app;
