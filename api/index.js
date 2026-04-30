@@ -1,9 +1,10 @@
 import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
-import authRoutes from './routes/auth.js'
-import groupRoutes from './routes/groups.js'
-import inviteRoutes from './routes/invites.js'
+import { handle } from '@vercel/express'
+import authRoutes from '../server/routes/auth.js'
+import groupRoutes from '../server/routes/groups.js'
+import inviteRoutes from '../server/routes/invites.js'
 
 const app = express()
 
@@ -18,4 +19,5 @@ app.use('/api/auth', authRoutes)
 app.use('/api/groups', groupRoutes)
 app.use('/api/invites', inviteRoutes)
 
-export default app
+// Vercel serverless handler
+export default handle(app)
