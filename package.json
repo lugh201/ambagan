@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "concurrently \"vite\" \"node server/index.js\"",
     "dev:api": "node server/index.js",
-    "build": "vite build",
+    "build": "prisma generate && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "prisma:generate": "prisma generate",
