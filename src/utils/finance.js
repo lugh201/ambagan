@@ -16,23 +16,23 @@ export const calculateBalances = (members, expenses) => {
   )
 
   expenses.forEach((expense) => {
-    // Only count unpaid splits for balances
     const unpaidSplits = expense.splits?.filter((s) => !s.isPaid) || []
-    
-    // What the payer is owed (from unpaid splits)
-    totalsPaid[expense.paidBy] += expense.amount
-    
-    // What each member owes (only unpaid amounts)
+
     unpaidSplits.forEach((split) => {
-      totalsOwed[split.userId] += Number(split.shareAmount)
+      const amount = Number(split.shareAmount)
+
+      // debtor owes
+      totalsOwed[split.userId] += amount
+
+      // creditor should receive
+      totalsPaid[expense.paidByUserId] += amount
     })
   })
 
   const netBalances = {}
   members.forEach((member) => {
-    const paid = totalsPaid[member.id] || 0
-    const owed = totalsOwed[member.id] || 0
-    netBalances[member.id] = paid - owed
+    netBalances[member.id] =
+      (totalsPaid[member.id] || 0) - (totalsOwed[member.id] || 0)
   })
 
   return { totalsPaid, totalsOwed, netBalances }
@@ -214,4 +214,48 @@ export const buildExactDebts = (members, expenses) => {
   })
 
   return groupedDebts
+}
+
+export const buildOutstandingDebts = (members, expenses) => {
+  const memberMap = Object.fromEntries(
+    members.map((member) => [member.id, member])
+  )
+  const debtMap = new Map()
+
+  expenses.forEach((expense) => {
+    const creditorId = expense.paidByUserId || expense.paidBy
+    const creditor = memberMap[creditorId]
+
+    if (!creditor) return
+
+    const splits = expense.splits || []
+
+    splits.forEach((split) => {
+      if (split.isPaid || split.userId === creditorId) return
+
+      const shareAmount = Number(split.shareAmount)
+      if (shareAmount <= 0) return
+
+      const debtor = memberMap[split.userId]
+      if (!debtor) return
+
+      const key = `${debtor.id}-${creditor.id}`
+      const existing = debtMap.get(key)
+
+      if (existing) {
+        existing.amount += shareAmount
+      } else {
+        debtMap.set(key, {
+          from: debtor.name,
+          fromId: debtor.id,
+          to: creditor.name,
+          toId: creditor.id,
+          amount: shareAmount,
+          isPaid: false,
+        })
+      }
+    })
+  })
+
+  return Array.from(debtMap.values())
 }
