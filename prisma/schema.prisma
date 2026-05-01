@@ -81,23 +81,26 @@ model GroupMember {
   @@unique([groupId, userId])
 }
 
-model Expense {
-  id            String        @id @default(uuid())
-  groupId       String
-  paidByUserId  String
-  amount        Decimal       @db.Decimal(12, 2)
-  description   String
-  createdAt     DateTime      @default(now())
-  group         Group         @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  paidByUser    User          @relation("ExpensesPaid", fields: [paidByUserId], references: [id])
-  splits        ExpenseSplit[]
-}
+  model Expense {
+    id            String        @id @default(uuid())
+    groupId       String
+    paidByUserId  String
+    amount        Decimal       @db.Decimal(12, 2)
+    description   String
+    createdAt     DateTime      @default(now())
+    group         Group         @relation(fields: [groupId], references: [id], onDelete: Cascade)
+    paidByUser    User          @relation("ExpensesPaid", fields: [paidByUserId], references: [id])
+    splits        ExpenseSplit[]
+  }
 
-model ExpenseSplit {
-  id          String   @id @default(uuid())
-  expenseId   String
-  userId      String
-  shareAmount Decimal  @db.Decimal(12, 2)
-  expense     Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
+  model ExpenseSplit {
+    id          String   @id @default(uuid())
+    expenseId   String
+    userId      String
+    shareAmount Decimal  @db.Decimal(12, 2)
+    isPaid      Boolean  @default(false)
+    expense     Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+    user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@unique([expenseId, userId])
+  }
