@@ -302,6 +302,11 @@ button:disabled {
   gap: 12px;
 }
 
+.balance-section {
+  display: grid;
+  gap: 8px;
+}
+
 .balance-pill {
   display: flex;
   justify-content: space-between;
@@ -319,6 +324,30 @@ button:disabled {
 .balance-pill.positive {
   background: rgba(34, 197, 94, 0.12);
   color: #0f7a34;
+}
+
+.balance-person-list {
+  display: grid;
+  gap: 6px;
+}
+
+.balance-person-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(24, 24, 27, 0.04);
+  font-size: 14px;
+}
+
+.balance-person-row strong {
+  white-space: nowrap;
+}
+
+.balance-empty {
+  margin: 0;
+  padding: 0 2px;
 }
 
 .debts {

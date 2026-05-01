@@ -6,7 +6,7 @@ import ContributionPieChart from './ContributionPieChart'
 import {
   buildContributionData,
   buildExactDebts,
-  calculateBalances,
+  buildOutstandingDebts,
   formatCurrency,
 } from '../utils/finance'
 
@@ -25,9 +25,9 @@ const GroupDetails = ({
   const [copied, setCopied] = useState(false)
   // const [inviteEmail, setInviteEmail] = useState('')
   // const [inviteStatus, setInviteStatus] = useState('idle')
-  const { netBalances } = calculateBalances(group.members, expenses)
   const contributions = buildContributionData(group.members, expenses)
   const allDebts = buildExactDebts(group.members, expenses)
+  const outstandingDebts = buildOutstandingDebts(group.members, expenses)
 
   const inviteLink = `${window.location.origin}/join/${group.inviteCode}`
 
@@ -132,7 +132,7 @@ const GroupDetails = ({
       </header>
 
       <div className="grid-two">
-        <BalanceSummary currentUser={currentUser} balances={netBalances} />
+        <BalanceSummary currentUser={currentUser} debts={outstandingDebts} />
         <ContributionPieChart data={contributions} />
       </div>
 
