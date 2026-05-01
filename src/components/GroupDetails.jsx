@@ -5,7 +5,7 @@ import AddExpenseForm from './AddExpenseForm'
 import ContributionPieChart from './ContributionPieChart'
 import {
   buildContributionData,
-  buildDebtPairs,
+  buildExactDebts,
   calculateBalances,
   formatCurrency,
 } from '../utils/finance'
@@ -13,17 +13,21 @@ import {
 const GroupDetails = ({
   group,
   expenses,
-  invites = [],
+  // invites = [],
   currentUser,
   onAddExpense,
-  onInvite,
+  onDeleteExpense,
+  onMarkPaid,
+  onDeleteGroup,
+  onMarkDebtPaid,
+  // onInvite,
 }) => {
   const [copied, setCopied] = useState(false)
-  const [inviteEmail, setInviteEmail] = useState('')
-  const [inviteStatus, setInviteStatus] = useState('idle')
+  // const [inviteEmail, setInviteEmail] = useState('')
+  // const [inviteStatus, setInviteStatus] = useState('idle')
   const { netBalances } = calculateBalances(group.members, expenses)
   const contributions = buildContributionData(group.members, expenses)
-  const debts = buildDebtPairs(group.members, netBalances)
+  const allDebts = buildExactDebts(group.members, expenses)
 
   const inviteLink = `${window.location.origin}/join/${group.inviteCode}`
 
@@ -32,30 +36,49 @@ const GroupDetails = ({
       await navigator.clipboard.writeText(inviteLink)
       setCopied(true)
       window.setTimeout(() => setCopied(false), 1600)
-    } catch (error) {
+    } catch {
       setCopied(false)
     }
   }
 
-  const handleInvite = async (event) => {
-    event.preventDefault()
-    if (!inviteEmail.trim() || !onInvite) return
-    setInviteStatus('loading')
-    try {
-      await onInvite(inviteEmail.trim())
-      setInviteEmail('')
-      setInviteStatus('sent')
-      window.setTimeout(() => setInviteStatus('idle'), 2000)
-    } catch (error) {
-      setInviteStatus('error')
+  const handleDeleteGroup = async () => {
+    if (window.confirm('Burahin ang group na ito? Mawawala lahat ng gastos at miyembro.')) {
+      await onDeleteGroup()
     }
   }
+
+  const handleMarkDebtPaid = async (debtorId, creditorId) => {
+    if (window.confirm('Markahan ang utang na ito bilang bayad?')) {
+      await onMarkDebtPaid(debtorId, creditorId)
+    }
+  }
+
+  // const handleInvite = async (event) => {
+  //   event.preventDefault()
+  //   if (!inviteEmail.trim() || !onInvite) return
+  //   setInviteStatus('loading')
+  //   try {
+  //     await onInvite(inviteEmail.trim())
+  //     setInviteEmail('')
+  //     setInviteStatus('sent')
+  //     window.setTimeout(() => setInviteStatus('idle'), 2000)
+  //   } catch (error) {
+  //     setInviteStatus('error')
+  //   }
+  // }
 
   return (
     <section className="group-details">
       <header className="card group-hero">
         <div>
-          <h2>{group.name}</h2>
+          <div className="group-title-row">
+            <h2>{group.name}</h2>
+            {group.createdByUserId === currentUser?.id && (
+              <button type="button" className="btn-small danger" onClick={handleDeleteGroup}>
+                Burahin
+              </button>
+            )}
+          </div>
           <div className="invite-row">
             <label className="muted">Invite link</label>
             <div className="invite-actions">
@@ -66,7 +89,7 @@ const GroupDetails = ({
             </div>
             <span className="muted">Code: {group.inviteCode}</span>
           </div>
-          <form className="stack" onSubmit={handleInvite}>
+          {/* <form className="stack" onSubmit={handleInvite}>
             <label>
               Invite by email
               <input
@@ -97,7 +120,7 @@ const GroupDetails = ({
                 </div>
               ))}
             </div>
-          ) : null}
+          ) : null} */}
         </div>
         <div className="member-chips">
           {group.members.map((member) => (
@@ -118,18 +141,35 @@ const GroupDetails = ({
           <h3>Sino ang may utang?</h3>
           <span className="muted">Auto compute</span>
         </div>
-        {debts.length === 0 ? (
+        {allDebts.length === 0 ? (
           <p className="muted">Pantay-pantay na ang ambagan.</p>
         ) : (
           <div className="debts">
-            {debts.map((debt, index) => (
-              <div key={`${debt.from}-${debt.to}-${index}`} className="debt">
-                <span>{debt.from}</span>
-                <span className="muted">may utang kay</span>
-                <span>{debt.to}</span>
-                <strong>{formatCurrency(debt.amount)}</strong>
-              </div>
-            ))}
+            {allDebts.map((debt, index) => {
+              const isCurrentUserCreditor = debt.toId === currentUser?.id
+
+              return (
+                <div key={`${debt.from}-${debt.to}-${index}`} className="debt">
+                  <span>{debt.from}</span>
+                  <span className="muted">may utang kay</span>
+                  <span>{debt.to}</span>
+                  <strong>{formatCurrency(debt.amount)}</strong>
+                  {debt.isPaid ? (
+                    <span className="badge-paid">PAID</span>
+                  ) : isCurrentUserCreditor ? (
+                    <button
+                      type="button"
+                      className="btn-small ghost"
+                      onClick={() => {
+                        handleMarkDebtPaid(debt.fromId, debt.toId)
+                      }}
+                    >
+                      Bayad na
+                    </button>
+                  ) : null}
+                </div>
+              )
+            })}
           </div>
         )}
       </section>
@@ -141,7 +181,13 @@ const GroupDetails = ({
           onAddExpense={onAddExpense}
           disabled={!group}
         />
-        <ExpenseList expenses={expenses} members={group.members} />
+        <ExpenseList
+          expenses={expenses}
+          members={group.members}
+          currentUser={currentUser}
+          onDeleteExpense={onDeleteExpense}
+          onMarkPaid={onMarkPaid}
+        />
       </div>
     </section>
   )

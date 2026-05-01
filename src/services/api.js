@@ -78,6 +78,26 @@ export const createInvite = async (groupId, email) => {
   return response.data
 }
 
+export const deleteExpense = async (groupId, expenseId) => {
+  const response = await api.delete(`/groups/${groupId}/expenses/${expenseId}`)
+  return response.data
+}
+
+export const markExpensePaid = async (groupId, expenseId, userId) => {
+  const response = await api.post(`/groups/${groupId}/expenses/${expenseId}/mark-paid`, { userId })
+  return response.data
+}
+
+export const deleteGroup = async (groupId) => {
+  const response = await api.delete(`/groups/${groupId}`)
+  return response.data
+}
+
+export const markDebtPaid = async (groupId, debtorId, creditorId) => {
+  const response = await api.post(`/groups/${groupId}/mark-debt-paid`, { debtorId, creditorId })
+  return response.data
+}
+
 export const getInvite = async (token) => {
   const response = await api.get(`/invites/${token}`)
   return response.data

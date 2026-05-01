@@ -6,12 +6,16 @@ import GroupDetails from '../components/GroupDetails'
 import {
   createExpense,
   createGroup,
+  deleteExpense,
+  deleteGroup,
   fetchExpenses,
   fetchGroupDetails,
   fetchGroups,
   fetchInvites,
   joinGroupByLink,
   createInvite,
+  markExpensePaid,
+  markDebtPaid,
 } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 
@@ -146,6 +150,69 @@ const GroupsPage = () => {
     setInvites(inviteData)
   }
 
+  const handleDeleteExpense = async (expenseId) => {
+    if (!activeGroup) return
+    setLoading(true)
+    setError('')
+    try {
+      await deleteExpense(activeGroup.id, expenseId)
+      setExpenses((prev) => prev.filter((e) => e.id !== expenseId))
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to delete expense')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleMarkPaid = async (expenseId, userId) => {
+    if (!activeGroup) return
+    setLoading(true)
+    setError('')
+    try {
+      await markExpensePaid(activeGroup.id, expenseId, userId)
+      // Refresh expenses to get updated splits
+      const expenseData = await fetchExpenses(activeGroup.id)
+      setExpenses(expenseData)
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to mark as paid')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDeleteGroup = async () => {
+    if (!activeGroup) return
+    setLoading(true)
+    setError('')
+    try {
+      await deleteGroup(activeGroup.id)
+      setGroups((prev) => prev.filter((g) => g.id !== activeGroup.id))
+      setActiveGroupId(null)
+      setActiveGroup(null)
+      navigate('/groups')
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to delete group')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleMarkDebtPaid = async (debtorId, creditorId) => {
+    if (!activeGroup) return
+    setLoading(true)
+    setError('')
+    try {
+      await markDebtPaid(activeGroup.id, debtorId, creditorId)
+      // Refresh expenses to get updated splits
+      const expenseData = await fetchExpenses(activeGroup.id)
+      setExpenses(expenseData)
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to mark debt as paid')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <>
       <AuthPanel currentUser={user} onLogout={logout} />
@@ -183,6 +250,10 @@ const GroupsPage = () => {
               currentUser={memberUser}
               onAddExpense={handleAddExpense}
               onInvite={handleInvite}
+              onDeleteExpense={handleDeleteExpense}
+              onMarkPaid={handleMarkPaid}
+              onDeleteGroup={handleDeleteGroup}
+              onMarkDebtPaid={handleMarkDebtPaid}
             />
           ) : (
             <section className="card empty">

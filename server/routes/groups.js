@@ -19,8 +19,14 @@ const serializeExpense = (expense) => ({
   id: expense.id,
   amount: Number(expense.amount),
   paidBy: expense.paidByUserId,
+  paidByUserId: expense.paidByUserId,
   description: expense.description,
   createdAt: expense.createdAt.toISOString().slice(0, 10),
+  splits: expense.splits?.map((split) => ({
+    userId: split.userId,
+    shareAmount: Number(split.shareAmount),
+    isPaid: split.isPaid,
+  })),
 })
 
 const ensureMember = async (groupId, userId) => {
@@ -75,6 +81,7 @@ router.get('/:groupId', async (req, res) => {
     id: group.id,
     name: group.name,
     inviteCode: group.inviteCode,
+    createdByUserId: group.createdByUserId,
     members: group.members.map(normalizeMember),
   })
 })
@@ -107,8 +114,7 @@ router.post('/', async (req, res) => {
   return res.status(201).json({
     id: group.id,
     name: group.name,
-    inviteCode: group.inviteCode,
-    members: group.members.map(normalizeMember),
+    inviteCode: group.inviteCode,    createdByUserId: group.createdByUserId,    members: group.members.map(normalizeMember),
   })
 })
 
@@ -150,6 +156,7 @@ router.post('/join', async (req, res) => {
     id: updated.id,
     name: updated.name,
     inviteCode: updated.inviteCode,
+    createdByUserId: updated.createdByUserId,
     members: updated.members.map(normalizeMember),
   })
 })
@@ -165,6 +172,9 @@ router.get('/:groupId/expenses', async (req, res) => {
   const expenses = await prisma.expense.findMany({
     where: { groupId },
     orderBy: { createdAt: 'desc' },
+    include: {
+      splits: true,
+    },
   })
 
   return res.json(expenses.map(serializeExpense))
@@ -292,6 +302,155 @@ router.post('/:groupId/invites', async (req, res) => {
     status: invite.status,
     expiresAt: invite.expiresAt,
   })
+})
+
+// Delete expense (only by the one who created it)
+router.delete('/:groupId/expenses/:expenseId', async (req, res) => {
+  const { groupId, expenseId } = req.params
+  const membership = await ensureMember(groupId, req.user.id)
+
+  if (!membership) {
+    return res.status(403).json({ message: 'Not a member' })
+  }
+
+  const expense = await prisma.expense.findUnique({
+    where: { id: expenseId },
+  })
+
+  if (!expense) {
+    return res.status(404).json({ message: 'Expense not found' })
+  }
+
+  if (expense.paidByUserId !== req.user.id) {
+    return res.status(403).json({ message: 'Only the creator can delete this expense' })
+  }
+
+  await prisma.expense.delete({
+    where: { id: expenseId },
+  })
+
+  return res.json({ message: 'Expense deleted' })
+})
+
+// Mark expense as paid (only by the one who is owed)
+router.post('/:groupId/expenses/:expenseId/mark-paid', async (req, res) => {
+  const { groupId, expenseId } = req.params
+  const { userId } = req.body // the debtor who paid
+
+  const membership = await ensureMember(groupId, req.user.id)
+
+  if (!membership) {
+    return res.status(403).json({ message: 'Not a member' })
+  }
+
+  const expense = await prisma.expense.findUnique({
+    where: { id: expenseId },
+    include: {
+      splits: true,
+    },
+  })
+
+  if (!expense) {
+    return res.status(404).json({ message: 'Expense not found' })
+  }
+
+  // Only the payer (paidByUserId) can mark as paid
+  if (expense.paidByUserId !== req.user.id) {
+    return res.status(403).json({ message: 'Only the payer can mark as paid' })
+  }
+
+  if (!userId) {
+    return res.status(400).json({ message: 'Missing userId' })
+  }
+
+  // Update the split for the specific user
+  await prisma.expenseSplit.update({
+    where: {
+      expenseId_userId: {
+        expenseId,
+        userId,
+      },
+    },
+    data: {
+      isPaid: true,
+    },
+  })
+
+  return res.json({ message: 'Marked as paid' })
+})
+
+// Delete group (only by the creator)
+router.delete('/:groupId', async (req, res) => {
+  const { groupId } = req.params
+  const membership = await ensureMember(groupId, req.user.id)
+
+  if (!membership) {
+    return res.status(403).json({ message: 'Not a member' })
+  }
+
+  const group = await prisma.group.findUnique({
+    where: { id: groupId },
+  })
+
+  if (!group) {
+    return res.status(404).json({ message: 'Group not found' })
+  }
+
+  if (group.createdByUserId !== req.user.id) {
+    return res.status(403).json({ message: 'Only the group creator can delete this group' })
+  }
+
+  // Delete the group (cascades to members, expenses, invites)
+  await prisma.group.delete({
+    where: { id: groupId },
+  })
+
+  return res.json({ message: 'Group deleted' })
+})
+
+// Mark debt as paid (only by the creditor)
+router.post('/:groupId/mark-debt-paid', async (req, res) => {
+  const { groupId } = req.params
+  const { debtorId, creditorId } = req.body
+
+  const membership = await ensureMember(groupId, req.user.id)
+
+  if (!membership) {
+    return res.status(403).json({ message: 'Not a member' })
+  }
+
+  // Only the creditor can mark the debt as paid
+  if (req.user.id !== creditorId) {
+    return res.status(403).json({ message: 'Only the creditor can mark as paid' })
+  }
+
+  // Find all unpaid splits where debtor owes creditor
+  const splits = await prisma.expenseSplit.findMany({
+    where: {
+      expense: {
+        groupId,
+        paidByUserId: creditorId,
+      },
+      userId: debtorId,
+      isPaid: false,
+    },
+  })
+
+  if (splits.length === 0) {
+    return res.status(404).json({ message: 'No unpaid debt found' })
+  }
+
+  // Mark all as paid
+  await prisma.expenseSplit.updateMany({
+    where: {
+      id: { in: splits.map((s) => s.id) },
+    },
+    data: {
+      isPaid: true,
+    },
+  })
+
+  return res.json({ message: 'Debt marked as paid' })
 })
 
 export default router
